@@ -9,7 +9,7 @@ public class ClassForTest {
 
     public ClassForTest() {
         this.age = 0;
-        this.name = "NoName";
+        this.name = "InitialName";
         this.sexMale = true;
     }
 

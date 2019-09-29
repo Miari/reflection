@@ -2,11 +2,18 @@ package com.boroday;
 
 import java.lang.reflect.*;
 import java.util.ArrayList;
+import java.util.Collections;
 
-public class Reflection<T> {
+public class Reflection {
 
-    public T createObject(Class<T> clazz) throws NoSuchMethodException, IllegalAccessException, InvocationTargetException, InstantiationException {
-        return clazz.getConstructor().newInstance();
+    public Object createObject(Class<?> clazz) throws ReflectiveOperationException {
+        try {
+            return clazz.getConstructor().newInstance();
+        } catch (IllegalAccessException | InstantiationException e) {
+            throw new RuntimeException(e.getMessage());
+        } catch (NoSuchMethodException | InvocationTargetException e) {
+            throw new ReflectiveOperationException(e.getMessage());
+        }
     }
 
     public int invokeMethods(Object object) throws InvocationTargetException, IllegalAccessException {
@@ -24,6 +31,13 @@ public class Reflection<T> {
         return count;
     }
 
+    public void showFinalMethods(Object object) {
+        ArrayList<String> strings = getFinalMethods(object);
+        for (String string : strings) {
+            System.out.println(string);
+        }
+    }
+
     public ArrayList<String> getFinalMethods(Object object) {
         ArrayList<String> strings = new ArrayList<>();
         Class clazz = object.getClass();
@@ -33,7 +47,28 @@ public class Reflection<T> {
                 strings.add(method.toString());
             }
         }
+        boolean methodExists = false;
+        Method[] inheritedMethods = clazz.getMethods();
+        for (Method inheritedMethod : inheritedMethods) {
+            if (Modifier.isFinal(inheritedMethod.getModifiers())) {
+                for (String string : strings) {
+                    if (string.equals(inheritedMethod.toString())) {
+                        methodExists = true;
+                    }
+                }
+                if (!methodExists) {
+                    strings.add(inheritedMethod.toString());
+                }
+            }
+        }
         return strings;
+    }
+
+    public void showNotPublicMethods(Class clazz) {
+        ArrayList<String> strings = getNotPublicMethods(clazz);
+        for (String string : strings) {
+            System.out.println(string);
+        }
     }
 
     public ArrayList<String> getNotPublicMethods(Class clazz) {
@@ -44,54 +79,108 @@ public class Reflection<T> {
                 strings.add(method.toString());
             }
         }
+
+        Method[] inheritedMethods = clazz.getMethods();
+        for (Method inheritedMethod : inheritedMethods) {
+            boolean methodExists = false;
+            if (!Modifier.isPublic(inheritedMethod.getModifiers())) {
+                for (String string : strings) {
+                    if (string.equals(inheritedMethod.toString())) {
+                        methodExists = true;
+                    }
+                }
+                if (!methodExists) {
+                    strings.add(inheritedMethod.toString());
+                }
+            }
+        }
         return strings;
     }
 
-    public ArrayList<Class> getAllAncestorsAndInterfaces(Class clazz) {
-        ArrayList<Class> arrayList = new ArrayList<>();
-        defineAncestors(clazz, arrayList);
+    public void showAllParentClassesAndInterfaces(Class clazz) throws ClassNotFoundException {
+        ArrayList<String> arrayList = getAllParentClassesAndInterfaces(clazz);
+        for (String string : arrayList) {
+            System.out.println(string);
+        }
+    }
+
+    public ArrayList<String> getAllParentClassesAndInterfaces(Class clazz) throws ClassNotFoundException {
+        ArrayList<String> arrayList = new ArrayList<>();
+
+        defineParentClasses(clazz, arrayList); // getAllParentClasses
+
         Class<?>[] interfaces = clazz.getInterfaces();
-        for (Class clazzes : interfaces) {
-            arrayList.add(clazzes);
-        }
+        defineInterfaces(interfaces, arrayList);
+
         return arrayList;
     }
 
-    private ArrayList<Class> defineAncestors(Class clazz, ArrayList arrayList) {
-        Class newClazz = clazz.getSuperclass();
-        arrayList.add(newClazz);
-        if (newClazz.getSimpleName().equals("Object")) {
+    private ArrayList<String> defineParentClasses(Class clazz, ArrayList<String> arrayList) {
+        Class superClass = clazz.getSuperclass();
+        if (superClass == null) {
             return arrayList;
-        } else {
-            defineAncestors(newClazz, arrayList);
+        }
+        arrayList.add(superClass.toString());
+        defineParentClasses(superClass, arrayList);
+        return arrayList;
+    }
+
+    private ArrayList<String> defineInterfaces(Class[] interfaces, ArrayList<String> arrayList) throws ClassNotFoundException {
+        for (Class interfaze : interfaces) {
+            if (interfaze == null) {
+                return arrayList;
+            }
+            String type = interfaze.getTypeName();
+            boolean interfaceExists = false;
+            for (String string : arrayList) {
+                if (string.equals("interface " + type)) {
+                    interfaceExists = true;
+                }
+            }
+            if (!interfaceExists) {
+                arrayList.add("interface " + type);
+            }
+            Class<?> theClass = Class.forName(type);
+            Class<?>[] nextInterfaces = theClass.getInterfaces();
+            defineInterfaces(nextInterfaces, arrayList);
         }
         return arrayList;
     }
 
-    public Object setNullValues(Object object) throws IllegalAccessException {
+    public Object setDefaultValues(Object object) throws IllegalAccessException {
         Class clazz = object.getClass();
-        Field[] fields = clazz.getDeclaredFields();
+        ArrayList<Field> fields = new ArrayList<>();
+
+        Field[] declaredFields = clazz.getDeclaredFields();
+        Collections.addAll(fields, declaredFields);
+
+        Field[] nonDeclaredFields = clazz.getFields();
+        for (Field nonDeclaredField : nonDeclaredFields) {
+            boolean fieldExists = false;
+            for (Field field : fields) {
+                if (nonDeclaredField.equals(field)) {
+                    fieldExists = true;
+                }
+            }
+            if (!fieldExists) {
+                fields.add(nonDeclaredField);
+            }
+        }
 
         for (Field field : fields) {
             if (Modifier.isPrivate(field.getModifiers())) {
                 field.setAccessible(true);
-                Type type = field.getType();
-                if (type.getTypeName().equals("int")) { // наверняка можно сделать проще, но незнаю как
-                    field.setInt(object, 0);
-                } else if (type.getTypeName().equals("short")) {
-                    field.setShort(object, (short) 0);
-                } else if (type.getTypeName().equals("long")) {
-                    field.setLong(object, 0);
-                } else if (type.getTypeName().equals("double")) {
+                Class<?> type = field.getType();
+                if (byte.class.equals(type) || int.class.equals(type) || short.class.equals(type) || long.class.equals(type)) {
+                    field.set(object, 0);
+                } else if (double.class.equals(type)) {
                     field.setDouble(object, 0.0);
-                } else if (type.getTypeName().equals("float")) {
+                } else if (float.class.equals(type) || double.class.equals(type)) {
                     field.setFloat(object, 0.0f);
-                } else if (type.getTypeName().equals("boolean")) {
-                    field.setBoolean(object, false);
-                } else if (type.getTypeName().equals("byte")) {
-                    field.setByte(object, (byte) 0);
-                } else if (type.getTypeName().equals("char")) {
-                    field.setChar(object, '\u0000');
+                } else if (boolean.class.equals(type)) {
+                    field.set(object, false);
+                } else if (char.class.equals(type)) {
+                    field.set(object, '\u0000');
                 } else {
                     field.set(object, null);
                 }
