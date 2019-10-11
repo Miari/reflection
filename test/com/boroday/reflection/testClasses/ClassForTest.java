@@ -1,22 +1,23 @@
-package com.boroday;
+package com.boroday.reflection.testClasses;
 
 public class ClassForTest {
+    private final static char DEFAULT_DEPARTMENT = 'U';
+
     private int age;
     private String name;
     public boolean sexMale;
-    final private char DEPARTMENT = 'U';
-    final public double DEFAULT_SALARY = 1500.8;
+    private final char department;
+    public final double default_salary = 1500.8;
 
     public ClassForTest() {
-        this.age = 0;
-        this.name = "InitialName";
-        this.sexMale = true;
+        this (0, "InitialName", true, DEFAULT_DEPARTMENT);
     }
 
-    public ClassForTest(int age, String name, boolean sexMale) {
+    public ClassForTest(int age, String name, boolean sexMale, char department) {
         this.age = age;
         this.name = name;
         this.sexMale = sexMale;
+        this.department = department;
     }
 
     public int getAge() {
@@ -40,11 +41,11 @@ public class ClassForTest {
     }
 
     public char getDEPARTMENT() {
-        return DEPARTMENT;
+        return department;
     }
 
     public double getDEFAULT_SALARY() {
-        return DEFAULT_SALARY;
+        return default_salary;
     }
 
     private void removeName() {

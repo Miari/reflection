@@ -16,22 +16,19 @@ public class Reflection {
         }
     }
 
-    public int invokeMethods(Object object) throws InvocationTargetException, IllegalAccessException {
-        Class clazz = object.getClass();
-        Method[] methods = clazz.getDeclaredMethods();
-        int count = 0;
+    public void invokeMethodsWithoutParameters(Object object) throws InvocationTargetException, IllegalAccessException {
+        Class<?> clazz = object.getClass();
+        Method[] methods = clazz.getDeclaredMethods();// TODO: add getMethods
         for (Method method : methods) {
             if (method.getParameterCount() == 0) {
                 method.setAccessible(true);
                 method.invoke(object);
-                count++;
                 method.setAccessible(false);
             }
         }
-        return count;
     }
 
-    public void showFinalMethods(Object object) {
+    public void printFinalMethods(Object object) {
         ArrayList<String> strings = getFinalMethods(object);
         for (String string : strings) {
             System.out.println(string);
@@ -40,7 +37,7 @@ public class Reflection {
 
     public ArrayList<String> getFinalMethods(Object object) {
         ArrayList<String> strings = new ArrayList<>();
-        Class clazz = object.getClass();
+        Class<?> clazz = object.getClass();
         Method[] methods = clazz.getDeclaredMethods();
         for (Method method : methods) {
             if (Modifier.isFinal(method.getModifiers())) {
@@ -64,14 +61,14 @@ public class Reflection {
         return strings;
     }
 
-    public void showNotPublicMethods(Class clazz) {
+    public void printNotPublicMethods(Class<?> clazz) {
         ArrayList<String> strings = getNotPublicMethods(clazz);
         for (String string : strings) {
             System.out.println(string);
         }
     }
 
-    public ArrayList<String> getNotPublicMethods(Class clazz) {
+    public ArrayList<String> getNotPublicMethods(Class<?> clazz) {
         ArrayList<String> strings = new ArrayList<>();
         Method[] methods = clazz.getDeclaredMethods();
         for (Method method : methods) {
@@ -97,15 +94,15 @@ public class Reflection {
         return strings;
     }
 
-    public void showAllParentClassesAndInterfaces(Class clazz) throws ClassNotFoundException {
-        ArrayList<String> arrayList = getAllParentClassesAndInterfaces(clazz);
-        for (String string : arrayList) {
-            System.out.println(string);
+    public void printAllParentClassesAndInterfaces(Class<?> clazz) throws ClassNotFoundException {
+        ArrayList<Class> arrayList = getAllParentClassesAndInterfaces(clazz);
+        for (Class classToPrint : arrayList) {
+            System.out.println(classToPrint.getName());
         }
     }
 
-    public ArrayList<String> getAllParentClassesAndInterfaces(Class clazz) throws ClassNotFoundException {
-        ArrayList<String> arrayList = new ArrayList<>();
+    public ArrayList<Class> getAllParentClassesAndInterfaces(Class<?> clazz) throws ClassNotFoundException {
+        ArrayList<Class> arrayList = new ArrayList<>();
 
         defineParentClasses(clazz, arrayList); // getAllParentClasses
 
@@ -115,30 +112,30 @@ public class Reflection {
         return arrayList;
     }
 
-    private ArrayList<String> defineParentClasses(Class clazz, ArrayList<String> arrayList) {
-        Class superClass = clazz.getSuperclass();
+    private ArrayList<Class> defineParentClasses(Class<?> clazz, ArrayList<Class> arrayList) {
+        Class<?> superClass = clazz.getSuperclass();
         if (superClass == null) {
             return arrayList;
         }
-        arrayList.add(superClass.toString());
+        arrayList.add(superClass);
         defineParentClasses(superClass, arrayList);
         return arrayList;
     }
 
-    private ArrayList<String> defineInterfaces(Class[] interfaces, ArrayList<String> arrayList) throws ClassNotFoundException {
-        for (Class interfaze : interfaces) {
+    private ArrayList<Class> defineInterfaces(Class<?>[] interfaces, ArrayList<Class> arrayList) throws ClassNotFoundException {
+        for (Class<?> interfaze : interfaces) {
             if (interfaze == null) {
                 return arrayList;
             }
             String type = interfaze.getTypeName();
             boolean interfaceExists = false;
-            for (String string : arrayList) {
-                if (string.equals("interface " + type)) {
+            for (Class clazz : arrayList) {
+                if (clazz.equals(Class.forName(type))) {
                     interfaceExists = true;
                 }
             }
             if (!interfaceExists) {
-                arrayList.add("interface " + type);
+                arrayList.add(Class.forName(type));
             }
             Class<?> theClass = Class.forName(type);
             Class<?>[] nextInterfaces = theClass.getInterfaces();
@@ -147,8 +144,8 @@ public class Reflection {
         return arrayList;
     }
 
-    public Object setDefaultValues(Object object) throws IllegalAccessException {
-        Class clazz = object.getClass();
+    public Object setDefaultValuesToPrivateFields(Object object) throws IllegalAccessException {
+        Class<?> clazz = object.getClass();
         ArrayList<Field> fields = new ArrayList<>();
 
         Field[] declaredFields = clazz.getDeclaredFields();
@@ -172,9 +169,7 @@ public class Reflection {
                 field.setAccessible(true);
                 Class<?> type = field.getType();
                 if (byte.class.equals(type) || int.class.equals(type) || short.class.equals(type) || long.class.equals(type)) {
-                    field.set(object, 0);
-                } else if (double.class.equals(type)) {
-                    field.setDouble(object, 0.0);
+                    field.set(object, (byte)0);
                 } else if (float.class.equals(type) || double.class.equals(type)) {
                     field.setFloat(object, 0.0f);
                 } else if (boolean.class.equals(type)) {
