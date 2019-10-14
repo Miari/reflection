@@ -4,11 +4,11 @@ public class TestClassWithMethodWithoutParameters {
     public boolean shouldBeChanged = false;
     public boolean shouldNotBeChanged = false;
 
-    public void methodWithoutParameters(){
+    public void methodWithoutParameters() {
         shouldBeChanged = true;
     }
 
-    public void methodWithoutParameters(String arg){
+    public void methodWithoutParameters(String arg) {
         shouldNotBeChanged = true;
     }
 }

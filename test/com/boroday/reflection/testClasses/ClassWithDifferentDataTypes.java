@@ -20,7 +20,7 @@ public class ClassWithDifferentDataTypes {
     private String privateString = "Hi!";
     public String publicString = "Hi!";
 
-    public ClassWithDifferentDataTypes(){
+    public ClassWithDifferentDataTypes() {
 
     }
 

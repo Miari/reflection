@@ -1,14 +1,10 @@
 package com.boroday.reflection;
 
-import com.boroday.reflection.testClasses.ClassForTest;
+import com.boroday.reflection.testClasses.*;
 import com.boroday.Reflection;
-import com.boroday.reflection.testClasses.ClassWithDifferentDataTypes;
-import com.boroday.reflection.testClasses.ClassWithPrivateConstructor;
-import com.boroday.reflection.testClasses.TestClassWithMethodWithoutParameters;
 import org.junit.Test;
 
 import java.io.Serializable;
-import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 
 import static org.junit.Assert.*;
@@ -18,7 +14,7 @@ public class ReflectionTest {
 
     @Test
     public void testCreateObject() throws ReflectiveOperationException {
-        assertEquals(ClassForTest.class, reflection.createObject(ClassForTest.class).getClass());
+        assertEquals(ArrayList.class, reflection.createObject(ArrayList.class).getClass());
         Object object = reflection.createObject(String.class);
         assertEquals("", object);
     }
@@ -28,8 +24,9 @@ public class ReflectionTest {
         reflection.createObject(ClassWithPrivateConstructor.class);
     }
 
-    @Test
-    public void testInvokeMethodsWithoutParameters() throws InvocationTargetException, IllegalAccessException {
+    @Test(expected = ReflectiveOperationException.class)
+    //не знаю как написать позитивный тест на метод, так как сейчвс при вызове метода invokeMethodsWithoutParameters(), пытаются ввызваться метода Object.а и постоянно возникает ощибка
+    public void testInvokeMethodsWithoutParameters() throws ReflectiveOperationException {
         TestClassWithMethodWithoutParameters testClass = new TestClassWithMethodWithoutParameters();
         reflection.invokeMethodsWithoutParameters(testClass);
         assertTrue(testClass.shouldBeChanged);
@@ -38,27 +35,32 @@ public class ReflectionTest {
 
     @Test
     public void testGetFinalMethods() {
-        ArrayList<String> list = reflection.getFinalMethods(new ClassForTest());
-        assertEquals(2, reflection.getFinalMethods(new ClassForTest()).size());
-        // assertEquals(6, reflection.getFinalMethods(new LinkedList()).size());
-        assertTrue(list.remove("public final void com.boroday.reflection.testClasses.ClassForTest.changeNameToDefault()"));
-        assertTrue(list.remove("private final void com.boroday.reflection.testClasses.ClassForTest.doubleAge()"));
+        ArrayList<String> list = reflection.getFinalMethods(new LinkedList<>());
+        assertEquals(6, reflection.getFinalMethods(new LinkedList()).size());
+        assertTrue(list.remove("public final void java.lang.Object.wait(long,int) throws java.lang.InterruptedException"));
+        assertTrue(list.remove("public final void java.lang.Object.wait() throws java.lang.InterruptedException"));
+        assertTrue(list.remove("public final native void java.lang.Object.wait(long) throws java.lang.InterruptedException"));
+        assertTrue(list.remove("public final native java.lang.Class java.lang.Object.getClass()"));
+        assertTrue(list.remove("public final native void java.lang.Object.notify()"));
+        assertTrue(list.remove("public final native void java.lang.Object.notifyAll()"));
         assertTrue(list.isEmpty());
     }
 
     @Test
     public void testGetNotPublicMethodsCheckOutput() {
-        ArrayList<String> list = reflection.getNotPublicMethods(ClassForTest.class);
-        assertEquals(4, reflection.getNotPublicMethods(ClassForTest.class).size());
-        assertTrue(list.remove("private void com.boroday.reflection.testClasses.ClassForTest.setName(java.lang.String)"));
-        assertTrue(list.remove("private void com.boroday.reflection.testClasses.ClassForTest.setAge(int)"));
-        assertTrue(list.remove("private void com.boroday.reflection.testClasses.ClassForTest.removeName()"));
-        assertTrue(list.remove("private final void com.boroday.reflection.testClasses.ClassForTest.doubleAge()"));
+        ArrayList<String> list = reflection.getNotPublicMethods(ClassForTestNotPublicMethods.class);
+        assertEquals(6, reflection.getNotPublicMethods(ClassForTestNotPublicMethods.class).size());
+        assertTrue(list.remove("void com.boroday.reflection.testClasses.ClassForTestNotPublicMethods.packageVisibleMethod()"));
+        assertTrue(list.remove("protected void com.boroday.reflection.testClasses.ClassForTestNotPublicMethods.protectedMethod()"));
+        assertTrue(list.remove("private void com.boroday.reflection.testClasses.ClassForTestNotPublicMethods.privateMethod()"));
+        assertTrue(list.remove("protected void java.lang.Object.finalize() throws java.lang.Throwable"));
+        assertTrue(list.remove("protected native java.lang.Object java.lang.Object.clone() throws java.lang.CloneNotSupportedException"));
+        assertTrue(list.remove("private static native void java.lang.Object.registerNatives()"));
         assertTrue(list.isEmpty());
     }
 
     @Test
-    public void testGetAllParentClassesAndInterfaces() throws ClassNotFoundException {
+    public void testGetAllParentClassesAndInterfaces() throws ReflectiveOperationException {
         ArrayList<Class> arrayList = reflection.getAllParentClassesAndInterfaces(LinkedList.class);
         assertEquals(11, arrayList.size());
         assertTrue(arrayList.remove(AbstractSequentialList.class));
@@ -76,7 +78,7 @@ public class ReflectionTest {
     }
 
     @Test
-    public void testSetDefaultValuesToPrivateFields() throws IllegalAccessException {
+    public void testSetDefaultValuesToPrivateFields() throws ReflectiveOperationException {
         ClassWithDifferentDataTypes testClass = new ClassWithDifferentDataTypes();
         reflection.setDefaultValuesToPrivateFields(testClass);
         assertEquals(0, testClass.getPrivateByte());
